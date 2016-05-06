@@ -19,7 +19,7 @@ func NewDB(sqlConn *sql.DB) *DB {
 }
 
 var createUsersTable = `CREATE TABLE users (
-	account_id VARCHAR(255) PRIMARY KEY,
+	username VARCHAR(255) PRIMARY KEY,
 	pokemon TEXT,
 	last_processed_at BIGINT,
 	tracker_api_token VARCHAR(255)
@@ -40,12 +40,12 @@ func (d *DB) CreateInitialSchema(logger lager.Logger) error {
 	return nil
 }
 
-func (d *DB) CreateUser(logger lager.Logger, accountID string, trackerAPIToken string) error {
+func (d *DB) CreateUser(logger lager.Logger, username string, trackerAPIToken string) error {
 	return d.transact(logger, func(logger lager.Logger, tx *sql.Tx) error {
-		logger.Info("inserting-user", lager.Data{"account_id": accountID})
+		logger.Info("inserting-user", lager.Data{"username": username})
 		_, err := tx.Exec(`
-		  INSERT INTO users(account_id,pokemon,last_processed_at,tracker_api_token) VALUES($1,$2,$3,$4);`,
-			accountID,
+		  INSERT INTO users(username,pokemon,last_processed_at,tracker_api_token) VALUES($1,$2,$3,$4);`,
+			username,
 			"",
 			0,
 			trackerAPIToken,
@@ -58,8 +58,8 @@ func (d *DB) CreateUser(logger lager.Logger, accountID string, trackerAPIToken s
 	})
 }
 
-func (d *DB) GetUser(logger lager.Logger, accountID string) (*models.User, error) {
-	row := d.sqlConn.QueryRow("SELECT pokemon,last_processed_at,tracker_api_token FROM users WHERE account_id = $1;", accountID)
+func (d *DB) GetUser(logger lager.Logger, username string) (*models.User, error) {
+	row := d.sqlConn.QueryRow("SELECT pokemon,last_processed_at,tracker_api_token FROM users WHERE username = $1;", username)
 
 	var pokemonString, trackerAPIToken string
 	var lastProcessedAt int
@@ -77,7 +77,7 @@ func (d *DB) GetUser(logger lager.Logger, accountID string) (*models.User, error
 	}
 
 	return &models.User{
-		AccountID:       accountID,
+		Username:        username,
 		Pokemon:         pokemon,
 		LastProcessedAt: time.Unix(0, int64(lastProcessedAt)),
 		TrackerAPIToken: trackerAPIToken,
@@ -104,7 +104,7 @@ func parsePokemonString(pokemonString string) ([]int, error) {
 }
 
 func (d *DB) Users(logger lager.Logger) ([]*models.User, error) {
-	rows, err := d.sqlConn.Query("SELECT account_id,pokemon,last_processed_at,tracker_api_token FROM users;")
+	rows, err := d.sqlConn.Query("SELECT username,pokemon,last_processed_at,tracker_api_token FROM users;")
 	if err != nil {
 		logger.Error("failed-to-fetch-users", err)
 		return nil, err
@@ -113,10 +113,10 @@ func (d *DB) Users(logger lager.Logger) ([]*models.User, error) {
 	users := []*models.User{}
 
 	for rows.Next() {
-		var accountID, pokemonString, trackerAPIToken string
+		var username, pokemonString, trackerAPIToken string
 		var lastProcessedAt int
 
-		err := rows.Scan(&accountID, &pokemonString, &lastProcessedAt, &trackerAPIToken)
+		err := rows.Scan(&username, &pokemonString, &lastProcessedAt, &trackerAPIToken)
 		if err != nil {
 			logger.Error("failed-to-fetch-user", err)
 			return nil, err
@@ -129,7 +129,7 @@ func (d *DB) Users(logger lager.Logger) ([]*models.User, error) {
 		}
 
 		users = append(users, &models.User{
-			AccountID:       accountID,
+			Username:        username,
 			Pokemon:         pokemon,
 			LastProcessedAt: time.Unix(0, int64(lastProcessedAt)),
 			TrackerAPIToken: trackerAPIToken,
@@ -139,14 +139,14 @@ func (d *DB) Users(logger lager.Logger) ([]*models.User, error) {
 	return users, nil
 }
 
-func (d *DB) UpdateUser(logger lager.Logger, accountID string, trackerAPIToken string) error {
+func (d *DB) UpdateUser(logger lager.Logger, username string, trackerAPIToken string) error {
 	return d.transact(logger, func(logger lager.Logger, tx *sql.Tx) error {
-		logger.Info("updating-user", lager.Data{"account_id": accountID})
+		logger.Info("updating-user", lager.Data{"username": username})
 
 		_, err := tx.Exec(`
-		  UPDATE users SET tracker_api_token = $2 WHERE account_id = $3;`,
+		  UPDATE users SET tracker_api_token = $2 WHERE username = $3;`,
 			trackerAPIToken,
-			accountID,
+			username,
 		)
 		if err != nil {
 			logger.Error("failed-inserting-user", err)
@@ -165,15 +165,15 @@ func marshalPokemon(pokemon []int) string {
 	return strings.Join(result, ",")
 }
 
-func (d *DB) AddUserPokemon(logger lager.Logger, accountID string, newPokemon []int, lastProcessedAt time.Time) error {
+func (d *DB) AddUserPokemon(logger lager.Logger, username string, newPokemon []int, lastProcessedAt time.Time) error {
 	return d.transact(logger, func(logger lager.Logger, tx *sql.Tx) error {
-		logger.Info("updating-user", lager.Data{"account_id": accountID})
+		logger.Info("updating-user", lager.Data{"username": username})
 
 		_, err := tx.Exec(`
-		  UPDATE users SET pokemon=$1,last_processed_at=$2 WHERE account_id = $3;`,
+		  UPDATE users SET pokemon=$1,last_processed_at=$2 WHERE username = $3;`,
 			marshalPokemon(newPokemon),
 			lastProcessedAt.UnixNano(),
-			accountID,
+			username,
 		)
 		if err != nil {
 			logger.Error("failed-inserting-user", err)
@@ -183,11 +183,11 @@ func (d *DB) AddUserPokemon(logger lager.Logger, accountID string, newPokemon []
 	})
 }
 
-func (d *DB) DeleteUser(logger lager.Logger, accountID string) error {
+func (d *DB) DeleteUser(logger lager.Logger, username string) error {
 	return d.transact(logger, func(logger lager.Logger, tx *sql.Tx) error {
 		_, err := tx.Exec(`
-		  DELETE FROM users WHERE account_id = $1;`,
-			accountID,
+		  DELETE FROM users WHERE username = $1;`,
+			username,
 		)
 		if err != nil {
 			logger.Error("failed-inserting-user", err)

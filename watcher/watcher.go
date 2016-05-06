@@ -32,7 +32,7 @@ func (w Watcher) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 
 	close(ready)
 
-	timer := time.NewTimer(1 * time.Second)
+	timer := time.NewTimer(30 * time.Second)
 
 	for {
 		select {
@@ -46,7 +46,7 @@ func (w Watcher) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 				logger.Error("failed-to-distribute-pokemon", err)
 			}
 
-			timer = time.NewTimer(1 * time.Second)
+			timer = time.NewTimer(30 * time.Second)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (w Watcher) distributeForUser(logger lager.Logger, user *models.User) error
 		}
 	}
 
-	err = w.d.AddUserPokemon(logger, user.AccountID, user.Pokemon, startProcessingTime)
+	err = w.d.AddUserPokemon(logger, user.Username, user.Pokemon, startProcessingTime)
 	if err != nil {
 		logger.Error("failed-to-update-user", err)
 		return err

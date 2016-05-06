@@ -19,7 +19,7 @@ func NewUsersHandler(logger lager.Logger, d *db.DB) UsersHandler {
 }
 
 type CreateRequest struct {
-	AccountID       string `json:"account_id"`
+	Username        string `json:"username"`
 	TrackerAPIToken string `json:"tracker_api_token"`
 }
 
@@ -42,7 +42,7 @@ func (u UsersHandler) CreateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = u.d.CreateUser(logger, request.AccountID, request.TrackerAPIToken)
+	err = u.d.CreateUser(logger, request.Username, request.TrackerAPIToken)
 	if err != nil {
 		logger.Error("failed-to-create-user", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -55,13 +55,13 @@ func (u UsersHandler) CreateUser(w http.ResponseWriter, req *http.Request) {
 func (u UsersHandler) GetUser(w http.ResponseWriter, req *http.Request) {
 	logger := u.logger.Session("get-user")
 
-	accountID := req.FormValue(":account_id")
-	if accountID == "" {
+	username := req.FormValue(":username")
+	if username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	user, err := u.d.GetUser(logger, accountID)
+	user, err := u.d.GetUser(logger, username)
 	if err != nil {
 		logger.Error("failed-to-get-user", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -102,13 +102,13 @@ func (u UsersHandler) UpdateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	accountID := req.FormValue(":account_id")
-	if accountID == "" {
+	username := req.FormValue(":username")
+	if username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = u.d.UpdateUser(logger, accountID, request.TrackerAPIToken)
+	err = u.d.UpdateUser(logger, username, request.TrackerAPIToken)
 	if err != nil {
 		logger.Error("failed-to-update-user", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -121,13 +121,13 @@ func (u UsersHandler) UpdateUser(w http.ResponseWriter, req *http.Request) {
 func (u UsersHandler) DeleteUser(w http.ResponseWriter, req *http.Request) {
 	logger := u.logger.Session("delete-user")
 
-	accountID := req.FormValue(":account_id")
-	if accountID == "" {
+	username := req.FormValue(":username")
+	if username == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err := u.d.DeleteUser(logger, accountID)
+	err := u.d.DeleteUser(logger, username)
 	if err != nil {
 		logger.Error("failed-to-delete-user", err)
 		w.WriteHeader(http.StatusBadRequest)
