@@ -16,13 +16,16 @@ import (
 )
 
 type Watcher struct {
-	logger     lager.Logger
-	d          *db.DB
-	httpClient *http.Client
+	logger           lager.Logger
+	d                *db.DB
+	httpClient       *http.Client
+	pokemonList      []*models.PokemonEntry
+	maxPokemonNumber float64
 }
 
-func NewWatcher(logger lager.Logger, d *db.DB, httpClient *http.Client) Watcher {
-	return Watcher{logger, d, httpClient}
+func NewWatcher(logger lager.Logger, d *db.DB, httpClient *http.Client, pokemonList []*models.PokemonEntry) Watcher {
+	lastEntry := pokemonList[len(pokemonList)-1]
+	return Watcher{logger, d, httpClient, pokemonList, lastEntry.Weight}
 }
 
 func (w Watcher) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -114,7 +117,7 @@ func (w Watcher) distributeForUser(logger lager.Logger, user *models.User) error
 
 	for _, notification := range activity {
 		if notification.Action == "acceptance" {
-			user.Pokemon = append(user.Pokemon, randomNumber())
+			user.Pokemon = append(user.Pokemon, w.randomPokemon())
 		}
 	}
 
@@ -127,6 +130,13 @@ func (w Watcher) distributeForUser(logger lager.Logger, user *models.User) error
 	return nil
 }
 
-func randomNumber() int {
-	return rand.Intn(150) + 1
+func (w Watcher) randomPokemon() string {
+	num := rand.Float64() * w.maxPokemonNumber
+	for _, entry := range w.pokemonList {
+		if num < entry.Weight {
+			return fmt.Sprintf("%d: %s", entry.Index, entry.Name)
+		}
+	}
+
+	panic("Whoops?")
 }

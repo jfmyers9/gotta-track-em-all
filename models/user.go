@@ -6,5 +6,11 @@ type User struct {
 	Username        string
 	TrackerAPIToken string
 	LastProcessedAt time.Time
-	Pokemon         []int
+	Pokemon         []string
+}
+
+type PokemonEntry struct {
+	Index  int
+	Name   string
+	Weight float64
 }

@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"database/sql"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/jfmyers9/gotta-track-em-all/db"
 	"github.com/jfmyers9/gotta-track-em-all/handlers"
+	"github.com/jfmyers9/gotta-track-em-all/models"
 	"github.com/jfmyers9/gotta-track-em-all/watcher"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
@@ -23,6 +28,12 @@ var trackerAPIToken = flag.String(
 	"trackerAPIToken",
 	"",
 	"API Token used to access the tracker api",
+)
+
+var pokemonCSV = flag.String(
+	"pokemonCSV",
+	"",
+	"path to pokemon csv",
 )
 
 var listenAddress = flag.String(
@@ -43,6 +54,12 @@ func main() {
 
 	sink := lager.NewReconfigurableSink(lager.NewWriterSink(os.Stdout, lager.DEBUG), lager.DEBUG)
 	logger.RegisterSink(sink)
+
+	pokemonList, err := parsePokemonCSV(*pokemonCSV)
+	if err != nil {
+		logger.Error("failed-to-parse-pokemon", err)
+		os.Exit(1)
+	}
 
 	sqlConn, err := sql.Open("postgres", *dbConnectionString)
 	if err != nil {
@@ -77,7 +94,7 @@ func main() {
 
 	members := grouper.Members{
 		{"api", http_server.New(*listenAddress, handler)},
-		{"watcher", watcher.NewWatcher(logger, d, httpClient)},
+		{"watcher", watcher.NewWatcher(logger, d, httpClient, pokemonList)},
 	}
 
 	group := grouper.NewOrdered(os.Interrupt, members)
@@ -93,4 +110,48 @@ func main() {
 	}
 
 	logger.Info("exited")
+}
+
+func parsePokemonCSV(path string) ([]*models.PokemonEntry, error) {
+	var cumWeight float64 = 0
+	pokemonList := []*models.PokemonEntry{}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		row := strings.Split(string(scanner.Text()), ",")
+		if len(row) != 3 {
+			println("what?")
+			continue
+		}
+
+		index, err := strconv.Atoi(row[0])
+		if err != nil {
+			fmt.Println("messed up")
+			continue
+		}
+
+		weight, err := strconv.ParseFloat(row[2], 64)
+		if err != nil {
+			fmt.Println("messed up more")
+			continue
+		}
+
+		cumWeight += weight
+
+		entry := models.PokemonEntry{
+			Index:  index,
+			Name:   row[1],
+			Weight: cumWeight,
+		}
+		pokemonList = append(pokemonList, &entry)
+	}
+
+	return pokemonList, scanner.Err()
 }

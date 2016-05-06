@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"strconv"
 	"strings"
 	"time"
 
@@ -84,22 +83,8 @@ func (d *DB) GetUser(logger lager.Logger, username string) (*models.User, error)
 	}, nil
 }
 
-func parsePokemonString(pokemonString string) ([]int, error) {
-	result := []int{}
-
-	nums := strings.Split(pokemonString, ",")
-	for _, num := range nums {
-		if num == "" {
-			continue
-		}
-		i, err := strconv.Atoi(num)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, i)
-	}
-
+func parsePokemonString(pokemonString string) ([]string, error) {
+	result := strings.Split(pokemonString, ",")
 	return result, nil
 }
 
@@ -156,16 +141,11 @@ func (d *DB) UpdateUser(logger lager.Logger, username string, trackerAPIToken st
 	})
 }
 
-func marshalPokemon(pokemon []int) string {
-	result := []string{}
-	for _, i := range pokemon {
-		s := strconv.Itoa(i)
-		result = append(result, s)
-	}
-	return strings.Join(result, ",")
+func marshalPokemon(pokemon []string) string {
+	return strings.Join(pokemon, ",")
 }
 
-func (d *DB) AddUserPokemon(logger lager.Logger, username string, newPokemon []int, lastProcessedAt time.Time) error {
+func (d *DB) AddUserPokemon(logger lager.Logger, username string, newPokemon []string, lastProcessedAt time.Time) error {
 	return d.transact(logger, func(logger lager.Logger, tx *sql.Tx) error {
 		logger.Info("updating-user", lager.Data{"username": username})
 
