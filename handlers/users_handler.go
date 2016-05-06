@@ -19,9 +19,8 @@ func NewUsersHandler(logger lager.Logger, d *db.DB) UsersHandler {
 }
 
 type CreateRequest struct {
-	AccountID       string   `json:"account_id"`
-	ProjectIDs      []string `json:"project_ids"`
-	TrackerAPIToken string   `json:"tracker_api_token"`
+	AccountID       string `json:"account_id"`
+	TrackerAPIToken string `json:"tracker_api_token"`
 }
 
 func (u UsersHandler) CreateUser(w http.ResponseWriter, req *http.Request) {
@@ -43,7 +42,7 @@ func (u UsersHandler) CreateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = u.d.CreateUser(logger, request.AccountID, request.ProjectIDs, request.TrackerAPIToken)
+	err = u.d.CreateUser(logger, request.AccountID, request.TrackerAPIToken)
 	if err != nil {
 		logger.Error("failed-to-create-user", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -81,8 +80,7 @@ func (u UsersHandler) GetUser(w http.ResponseWriter, req *http.Request) {
 }
 
 type UpdateRequest struct {
-	TrackerAPIToken string   `json:"tracker_api_token"`
-	ProjectIDs      []string `json:"project_ids"`
+	TrackerAPIToken string `json:"tracker_api_token"`
 }
 
 func (u UsersHandler) UpdateUser(w http.ResponseWriter, req *http.Request) {
@@ -110,7 +108,7 @@ func (u UsersHandler) UpdateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = u.d.UpdateUser(logger, accountID, request.ProjectIDs, request.TrackerAPIToken)
+	err = u.d.UpdateUser(logger, accountID, request.TrackerAPIToken)
 	if err != nil {
 		logger.Error("failed-to-update-user", err)
 		w.WriteHeader(http.StatusBadRequest)

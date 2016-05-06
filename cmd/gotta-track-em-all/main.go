@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
+	"net/http"
 	"os"
 
 	"github.com/jfmyers9/gotta-track-em-all/db"
 	"github.com/jfmyers9/gotta-track-em-all/handlers"
+	"github.com/jfmyers9/gotta-track-em-all/watcher"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
@@ -67,8 +70,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient := &http.Client{Transport: tr}
+
 	members := grouper.Members{
 		{"api", http_server.New(*listenAddress, handler)},
+		{"watcher", watcher.NewWatcher(logger, d, httpClient)},
 	}
 
 	group := grouper.NewOrdered(os.Interrupt, members)

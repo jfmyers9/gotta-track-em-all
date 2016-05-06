@@ -1,7 +1,10 @@
 package models
 
+import "time"
+
 type User struct {
 	AccountID       string
-	ProjectIDs      []string
 	TrackerAPIToken string
+	LastProcessedAt time.Time
+	Pokemon         []int
 }
