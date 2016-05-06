@@ -147,7 +147,7 @@ func parsePokemonCSV(path string) ([]*models.PokemonEntry, error) {
 
 		entry := models.PokemonEntry{
 			Index:  index,
-			Name:   row[1],
+			Name:   strings.Title(row[1]),
 			Weight: cumWeight,
 		}
 		pokemonList = append(pokemonList, &entry)
