@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -134,7 +135,8 @@ func (w Watcher) randomPokemon() string {
 	num := rand.Float64() * w.maxPokemonNumber
 	for _, entry := range w.pokemonList {
 		if num < entry.Weight {
-			return fmt.Sprintf("%d: %s", entry.Index, entry.Name)
+			str := strconv.FormatFloat(entry.Weight, 'f', -1, 64)
+			return fmt.Sprintf("%d: %s Rarity: %s", entry.Index, entry.Name, str)
 		}
 	}
 

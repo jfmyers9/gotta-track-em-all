@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jfmyers9/gotta-track-em-all/db"
 	"github.com/jfmyers9/gotta-track-em-all/handlers"
@@ -22,12 +24,6 @@ import (
 	"github.com/tedsuo/ifrit/sigmon"
 
 	_ "github.com/lib/pq"
-)
-
-var trackerAPIToken = flag.String(
-	"trackerAPIToken",
-	"",
-	"API Token used to access the tracker api",
 )
 
 var pokemonCSV = flag.String(
@@ -51,6 +47,8 @@ var dbConnectionString = flag.String(
 func main() {
 	flag.Parse()
 	logger := lager.NewLogger("gotta-track-em-all")
+
+	rand.Seed(time.Now().UnixNano())
 
 	sink := lager.NewReconfigurableSink(lager.NewWriterSink(os.Stdout, lager.DEBUG), lager.DEBUG)
 	logger.RegisterSink(sink)
