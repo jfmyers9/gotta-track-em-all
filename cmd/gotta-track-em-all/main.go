@@ -73,9 +73,9 @@ func main() {
 
 	d := db.NewDB(sqlConn)
 
-	err = d.CreateInitialSchema(logger)
+	err = d.RunMigrations(logger)
 	if err != nil {
-		logger.Error("failed-creating-schema", err)
+		logger.Error("failed-to-run-migrations", err)
 		os.Exit(1)
 	}
 
